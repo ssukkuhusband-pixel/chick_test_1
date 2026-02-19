@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>노란 요리사 - 프로토타입</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="game-container">
+  <div id="hud">
+    <div id="profile-area">
+      <div id="profile-icon">🐤</div>
+      <div id="profile-info">
+        <span class="rank">병슐랭 -</span>
+        <span class="name">병아리식당</span>
+        <span class="follower-hud">📸 <span id="follower-display">0</span></span>
+      </div>
+    </div>
+    <div id="currency-area">
+      <div class="currency-badge"><span class="icon">🌰</span><span id="gold-display">0</span></div>
+      <div class="currency-badge"><span class="icon">💎</span><span id="gem-display">10</span></div>
+    </div>
+  </div>
+
+  <div id="game-area">
+    <div id="side-review" class="side-btn">⭐</div>
+    <div id="side-sns" class="side-btn">📸<span class="sns-badge" id="sns-badge"></span></div>
+    <div id="side-contest" class="side-btn">🏆</div>
+    <div id="side-customer" class="side-btn">📖</div>
+
+    <div id="kitchen-area">
+      <div id="kitchen-bg"></div>
+      <div id="stove-queue-display"></div>
+      <!-- 화구 4개 (동적으로 active) -->
+      <div class="stove" id="stove-0"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
+      <div class="stove" id="stove-1"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
+      <div class="stove" id="stove-2"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
+      <div class="stove" id="stove-3"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
+    </div>
+
+    <div id="chef">🐤<div id="chef-bubble">바쁘거덩요</div></div>
+
+    <div id="dining-area">
+      <!-- 식탁 8개 (동적으로 active) -->
+    </div>
+
+    <div id="waiting-area"><span id="waiting-label">대기</span></div>
+    <div id="entrance"><div id="entrance-gate"></div></div>
+    <div class="ground-deco" style="bottom:195px;left:10px;font-size:18px;">🌿</div>
+    <div class="ground-deco" style="bottom:175px;right:15px;font-size:14px;">🍃</div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- ====== PANELS ====== -->
+  <!-- 공부 패널 -->
+  <div class="panel-overlay" id="panel-study">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>📖 요리 공부</h2><span class="panel-close" data-panel="panel-study">✕</span></div>
+      <div class="panel-tabs">
+        <div class="panel-tab active" data-tab="study-learn">요리 공부</div>
+        <div class="panel-tab" data-tab="study-skills">요리 스킬</div>
+      </div>
+      <div class="panel-body" id="study-learn"></div>
+      <div class="panel-body" id="study-skills" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 레시피 패널 -->
+  <div class="panel-overlay" id="panel-recipe">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>🧾 레시피</h2><span class="panel-close" data-panel="panel-recipe">✕</span></div>
+      <div class="panel-tabs">
+        <div class="panel-tab active" data-tab="recipe-gacha">뽑기</div>
+        <div class="panel-tab" data-tab="recipe-menu">메뉴판</div>
+      </div>
+      <div class="panel-body" id="recipe-gacha"></div>
+      <div class="panel-body" id="recipe-menu" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 가게 패널 -->
+  <div class="panel-overlay" id="panel-shop">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>🏠 가게</h2><span class="panel-close" data-panel="panel-shop">✕</span></div>
+      <div class="panel-tabs">
+        <div class="panel-tab active" data-tab="shop-expand">가게확장</div>
+        <div class="panel-tab" data-tab="shop-interior">인테리어</div>
+      </div>
+      <div class="panel-body" id="shop-expand"></div>
+      <div class="panel-body" id="shop-interior" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 병스타그램 패널 -->
+  <div class="panel-overlay" id="panel-sns">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>📸 병스타그램</h2><span class="panel-close" data-panel="panel-sns">✕</span></div>
+      <div class="panel-tabs">
+        <div class="panel-tab active" data-tab="sns-my">내 계정</div>
+        <div class="panel-tab" data-tab="sns-tag">태그</div>
+      </div>
+      <div class="panel-body" id="sns-my"></div>
+      <div class="panel-body" id="sns-tag" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 손님 도감 패널 -->
+  <div class="panel-overlay" id="panel-customer">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>📖 손님 도감</h2><span class="panel-close" data-panel="panel-customer">✕</span></div>
+      <div class="panel-body" id="customer-collection"></div>
+    </div>
+  </div>
+
+  <!-- 직원 패널 -->
+  <div class="panel-overlay" id="panel-staff">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>👥 직원 관리</h2><span class="panel-close" data-panel="panel-staff">✕</span></div>
+      <div class="panel-body" id="staff-list"></div>
+    </div>
+  </div>
+
+  <!-- 요리대회 패널 -->
+  <div class="panel-overlay" id="panel-contest">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>🏆 요리 대회</h2><span class="panel-close" data-panel="panel-contest">✕</span></div>
+      <div class="panel-body" id="contest-list"></div>
+    </div>
+  </div>
+
+  <!-- 프로필 패널 -->
+  <div class="panel-overlay" id="panel-profile">
+    <div class="panel-sheet">
+      <div class="panel-header"><h2>🐤 내 식당</h2><span class="panel-close" data-panel="panel-profile">✕</span></div>
+      <div class="panel-tabs">
+        <div class="panel-tab active" data-tab="profile-info-tab">가게 정보</div>
+        <div class="panel-tab" data-tab="profile-rank-tab">승급</div>
+      </div>
+      <div class="panel-body" id="profile-info-tab"></div>
+      <div class="panel-body" id="profile-rank-tab" style="display:none"></div>
+    </div>
+  </div>
+
+  <!-- 요리대회: 레시피 선택 모달 -->
+  <div class="contest-select-overlay" id="contest-select-modal">
+    <div class="contest-select-card">
+      <div class="contest-select-header">출전 요리 선택</div>
+      <div class="contest-select-grid" id="contest-select-grid"></div>
+      <button class="btn-primary" onclick="closeContestSelect()" style="margin-top:12px;padding:8px 32px;border-radius:16px;">취소</button>
+    </div>
+  </div>
+
+  <!-- 요리대회: 진행 장면 모달 -->
+  <div class="contest-scene-overlay" id="contest-scene-modal">
+    <div id="contest-scene-content"></div>
+  </div>
+
+  <!-- 요리대회: 결과 모달 -->
+  <div class="contest-result-overlay" id="contest-result-modal">
+    <div class="contest-result-card" id="contest-result-card"></div>
+  </div>
+
+  <!-- 직원 상세 모달 -->
+  <div class="staff-detail-overlay" id="staff-detail-modal">
+    <div class="staff-detail-card" id="staff-detail-card"></div>
+    <button class="btn-primary" onclick="closeStaffDetail()" style="margin-top:16px;padding:10px 40px;border-radius:20px;">닫기</button>
+  </div>
+
+  <!-- 손님 상세 모달 -->
+  <div class="customer-detail-overlay" id="customer-detail-modal">
+    <div class="customer-detail-card" id="customer-detail-card"></div>
+    <button class="btn-primary" onclick="closeCustomerDetail()" style="margin-top:16px;padding:10px 40px;border-radius:20px;">닫기</button>
+  </div>
+
+  <!-- 스킬 선택 모달 -->
+  <div class="skill-pick-overlay" id="skill-pick-modal">
+    <div class="skill-pick-title">🎴 요리 스킬 획득!</div>
+    <div class="skill-pick-cards" id="skill-pick-cards"></div>
+  </div>
+
+  <!-- 뽑기 결과 모달 -->
+  <div class="gacha-result-overlay" id="gacha-result-modal">
+    <div class="gacha-result-card" id="gacha-result-card"></div>
+    <button class="btn-primary gacha-result-confirm" onclick="closeGachaResult()">확인</button>
+  </div>
+
+  <!-- 레시피 상세 모달 -->
+  <div class="recipe-detail-overlay" id="recipe-detail-modal">
+    <div class="recipe-detail-card" id="recipe-detail-card"></div>
+    <button class="btn-primary gacha-result-confirm" onclick="closeRecipeDetail()" style="margin-top:16px">닫기</button>
+  </div>
+
+  <div id="bottom-nav">
+    <div class="nav-btn" id="nav-study"><div class="nav-icon">📖</div><span class="nav-label">공부</span></div>
+    <div class="nav-btn" id="nav-recipe"><div class="nav-icon">🧾</div><span class="nav-label">레시피</span></div>
+    <div class="nav-btn" id="nav-shop"><div class="nav-icon">🏠</div><span class="nav-label">가게</span></div>
+    <div class="nav-btn" id="nav-staff"><div class="nav-icon">👥</div><span class="nav-label">직원</span></div>
+    <div class="nav-btn" id="promo-btn"><div class="nav-icon">📢</div><span class="nav-label">홍보</span><div id="promo-gauge">0</div></div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="state.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
