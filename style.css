@@ -59,7 +59,7 @@ body {
 }
 
 /* === KITCHEN === */
-#kitchen-area { position: absolute; top: 100px; left: 20px; right: 20px; height: 180px; z-index: 10; }
+#kitchen-area { position: absolute; top: 100px; left: 20px; right: 20px; height: 140px; z-index: 10; }
 #kitchen-bg {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background: linear-gradient(135deg, #5c3d2e, #4a3020);
@@ -71,7 +71,7 @@ body {
   font-size: 11px; color: rgba(255,255,255,0.4); font-weight: bold;
 }
 .stove {
-  position: absolute; width: 70px; height: 70px;
+  position: absolute; width: 64px; height: 70px;
   background: linear-gradient(135deg, #666, #444);
   border-radius: 12px; border: 2px solid #555;
   display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -82,17 +82,16 @@ body {
 .stove .stove-icon { font-size: 28px; transition: transform 0.3s; }
 .stove.cooking .stove-icon { animation: stoveCooking 0.5s ease-in-out infinite; }
 @keyframes stoveCooking { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
-.stove .progress-bar { width: 50px; height: 5px; background: #333; border-radius: 3px; margin-top: 3px; overflow: hidden; }
+.stove .progress-bar { width: 44px; height: 5px; background: #333; border-radius: 3px; margin-top: 3px; overflow: hidden; }
 .stove .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #FFB800, #FF6B00); border-radius: 3px; transition: width 0.1s linear; }
 .stove .dish-label { font-size: 9px; color: #fff; margin-top: 2px; height: 12px; }
 .steam { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-size: 14px; opacity: 0; pointer-events: none; }
 .stove.cooking .steam { animation: steamRise 1.5s ease-out infinite; }
 @keyframes steamRise { 0%{opacity:0.8;transform:translateX(-50%) translateY(0)} 100%{opacity:0;transform:translateX(-50%) translateY(-20px)} }
-#stove-queue-display { position: absolute; top: 8px; right: 12px; font-size: 11px; color: rgba(255,255,255,0.7); z-index: 5; }
 
 /* === CHEF === */
 #chef {
-  position: absolute; top: 160px; left: 170px; z-index: 20; font-size: 42px;
+  position: absolute; top: 145px; left: 170px; z-index: 20; font-size: 42px;
   transition: left 0.4s ease, top 0.4s ease;
   filter: drop-shadow(0 3px 4px rgba(0,0,0,0.3));
 }
@@ -110,8 +109,28 @@ body {
 }
 #chef-bubble.show { opacity: 1; }
 
+/* === FOOD STANDS === */
+#stand-area {
+  position: absolute; top: 245px; left: 20px; right: 20px; height: 50px; z-index: 10;
+  display: flex; gap: 4px;
+}
+.food-stand {
+  width: 54px; height: 46px; background: #5c3d2e; border-radius: 8px;
+  border: 2px solid #8a6540; display: none; flex-direction: column;
+  align-items: center; justify-content: center; position: relative;
+}
+.food-stand.active { display: flex; }
+.food-stand .stand-icon { font-size: 22px; }
+.food-stand .stand-qty {
+  position: absolute; bottom: -2px; right: -2px; background: #e74c3c;
+  color: #fff; font-size: 9px; font-weight: bold; border-radius: 50%;
+  width: 16px; height: 16px; display: flex; align-items: center;
+  justify-content: center;
+}
+.food-stand.empty { opacity: 0.4; }
+
 /* === DINING === */
-#dining-area { position: absolute; top: 310px; left: 10px; right: 10px; height: 260px; z-index: 10; }
+#dining-area { position: absolute; top: 320px; left: 10px; right: 10px; height: 220px; z-index: 10; }
 .table-group {
   position: absolute; display: none; flex-direction: column; align-items: center; cursor: pointer;
 }
@@ -129,32 +148,140 @@ body {
 .chair.right { right: -12px; top: 10px; }
 .seated-customer { position: absolute; top: -32px; left: 50%; transform: translateX(-50%); font-size: 26px; opacity: 0; transition: opacity 0.3s, transform 0.3s; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
 .seated-customer.show { opacity: 1; transform: translateX(-50%) scale(1); }
-.order-bubble {
-  position: absolute; top: -65px; left: 50%; transform: translateX(-50%);
-  background: #fff; width: 40px; height: 40px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: 22px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.25); opacity: 0; cursor: pointer; transition: transform 0.2s; z-index: 30;
-}
-.order-bubble::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid #fff; }
-.order-bubble.show { opacity: 1; animation: orderBounce 0.5s ease; }
-.order-bubble:active { transform: translateX(-50%) scale(0.9); }
-@keyframes orderBounce { 0%{opacity:0;transform:translateX(-50%) scale(0.3)} 60%{transform:translateX(-50%) scale(1.15)} 100%{opacity:1;transform:translateX(-50%) scale(1)} }
 .eating-indicator { position: absolute; top: -55px; left: 50%; transform: translateX(-50%); font-size: 16px; opacity: 0; }
 .eating-indicator.show { opacity: 1; animation: eating 0.6s ease-in-out infinite; }
 @keyframes eating { 0%,100%{transform:translateX(-50%) rotate(0)} 25%{transform:translateX(-50%) rotate(-10deg)} 75%{transform:translateX(-50%) rotate(10deg)} }
 .served-dish { position: absolute; top: -5px; left: 50%; transform: translateX(-50%); font-size: 18px; opacity: 0; }
 .served-dish.show { opacity: 1; }
+.eat-progress-bar {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  width: 50px; height: 5px; background: rgba(0,0,0,0.3); border-radius: 3px;
+  overflow: hidden; display: none;
+}
+.eat-progress-bar.show { display: block; }
+.eat-progress-fill {
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, #ff6b6b, #ffa502);
+  border-radius: 3px; transition: width 0.3s linear;
+}
 
-/* === WAITING === */
-#waiting-area { position: absolute; bottom: 125px; left: 15px; right: 15px; height: 60px; z-index: 10; display: flex; align-items: center; gap: 2px; }
-#waiting-label { font-size: 11px; color: rgba(255,255,255,0.6); position: absolute; top: -16px; left: 4px; }
-.waiting-customer { font-size: 24px; opacity: 0; transform: translateX(30px); transition: opacity 0.3s, transform 0.3s; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2)); }
-.waiting-customer.show { opacity: 1; transform: translateX(0); }
+/* === VILLAGER AREA (마을 거리) === */
+#villager-area {
+  position: absolute; bottom: 140px; left: -30px; right: -30px; height: 55px; z-index: 8;
+  overflow: hidden;
+}
+.villager {
+  position: absolute; font-size: 20px; bottom: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+  pointer-events: none;
+  will-change: transform;
+}
+.villager.walk-right { transform: scaleX(1); }
+.villager.walk-left { transform: scaleX(-1); }
+.villager.size-sm { font-size: 16px; bottom: 2px; opacity: 0.7; }
+.villager.size-lg { font-size: 22px; bottom: 0; }
+.villager.entering-door {
+  transition: left 1s ease-in, bottom 1s ease-in, opacity 0.3s;
+}
 
 /* === ENTRANCE === */
-#entrance { position: absolute; bottom: 110px; right: 15px; width: 55px; height: 70px; z-index: 5; }
+#entrance { position: absolute; bottom: 190px; left: 50%; transform: translateX(-50%); width: 55px; height: 70px; z-index: 9; }
 #entrance-gate { width: 48px; height: 60px; background: linear-gradient(180deg, #8B6B4A, #6B4B2A); border-radius: 8px 8px 0 0; border: 2px solid #5a3a1a; display: flex; align-items: center; justify-content: center; }
 #entrance-gate::after { content: 'OPEN'; font-size: 8px; color: #FFD700; font-weight: bold; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+
+/* === FENCE (울타리) === */
+#fence-left, #fence-right {
+  position: absolute; bottom: 190px; height: 28px; z-index: 8;
+  background: repeating-linear-gradient(
+    90deg,
+    #8B6B4A 0px, #8B6B4A 3px,
+    transparent 3px, transparent 10px
+  );
+  border-top: 3px solid #6B4B2A;
+  border-bottom: 2px solid #5a3a1a;
+}
+#fence-left::before, #fence-right::before {
+  content: ''; position: absolute; top: 8px; left: 0; right: 0; height: 3px;
+  background: #6B4B2A;
+}
+#fence-left::after, #fence-right::after {
+  content: ''; position: absolute; top: 18px; left: 0; right: 0; height: 3px;
+  background: #6B4B2A;
+}
+#fence-left { left: 0; right: calc(50% + 28px); }
+#fence-right { left: calc(50% + 28px); right: 0; }
+
+/* 손님 입퇴장 애니메이션 */
+.customer-walking {
+  position: absolute; font-size: 22px; z-index: 15;
+  transition: left 1.2s ease, top 1.2s ease, opacity 0.3s;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+  pointer-events: none;
+}
+
+/* === STOVE SLOT BAR === */
+#stove-slot-bar {
+  position: absolute; bottom: 95px; left: 0; right: 0; height: 55px;
+  background: rgba(40,30,20,0.95); z-index: 100;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 10px;
+}
+.stove-slot {
+  width: 48px; height: 48px; background: rgba(255,255,255,0.08);
+  border-radius: 12px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; position: relative; transition: transform 0.1s;
+  border: 2px solid transparent;
+}
+.stove-slot:active { transform: scale(0.9); }
+.stove-slot.empty { border: 2px dashed rgba(255,255,255,0.25); }
+.stove-slot.assigned { border: 2px solid #FFB800; background: rgba(255,184,0,0.1); }
+.stove-slot.cooking { border: 2px solid #FF6B00; background: rgba(255,107,0,0.15); }
+.stove-slot .slot-icon { font-size: 24px; line-height: 1; }
+.stove-slot .slot-plus { font-size: 22px; color: rgba(255,255,255,0.3); }
+.stove-slot .slot-time {
+  font-size: 7px; color: #FFB800; position: absolute; bottom: 3px;
+  background: rgba(0,0,0,0.5); padding: 0 3px; border-radius: 3px;
+}
+.stove-slot .slot-progress {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+  background: #333; border-radius: 0 0 10px 10px; overflow: hidden;
+}
+.stove-slot .slot-progress-fill {
+  height: 100%; background: linear-gradient(90deg, #FFB800, #FF6B00);
+  width: 0%; transition: width 0.1s linear;
+}
+
+/* === RECIPE PICKER MODAL === */
+.recipe-picker-overlay {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 500;
+  display: none; align-items: center; justify-content: center;
+}
+.recipe-picker-overlay.show { display: flex; }
+.recipe-picker-card {
+  background: linear-gradient(135deg, #3a2e22, #2a1e14);
+  border-radius: 20px; padding: 20px; width: 340px; max-height: 70vh;
+  overflow-y: auto; border: 2px solid #FFB800;
+  text-align: center;
+}
+.recipe-picker-header {
+  font-size: 16px; font-weight: bold; color: #FFD700; margin-bottom: 14px;
+}
+.recipe-picker-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.rp-recipe {
+  background: rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 4px;
+  cursor: pointer; text-align: center; border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.rp-recipe:active { transform: scale(0.95); }
+.rp-recipe.assigned-elsewhere { opacity: 0.4; border-color: #666; }
+.rp-recipe .rp-icon { font-size: 28px; }
+.rp-recipe .rp-name { font-size: 9px; color: #ddd; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-recipe .rp-time { font-size: 8px; color: #FFB800; }
+.rp-recipe .rp-note { font-size: 8px; color: #FF6B00; margin-top: 2px; }
 
 /* === BOTTOM NAV === */
 #bottom-nav {
@@ -548,24 +675,6 @@ body {
   border-top: 5px solid #fffbe6;
 }
 .customer-bubble.show { opacity: 1; }
-
-.waiting-bubble {
-  position: absolute;
-  top: -28px;
-  background: #fffbe6;
-  padding: 3px 8px; border-radius: 8px;
-  font-size: 10px; color: #333; white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  opacity: 0; transition: opacity 0.3s;
-  pointer-events: none; z-index: 25;
-}
-.waiting-bubble::after {
-  content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 5px solid transparent; border-right: 5px solid transparent;
-  border-top: 5px solid #fffbe6;
-}
-.waiting-bubble.show { opacity: 1; }
 
 /* === STAFF PANEL (직원 관리) === */
 .staff-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }

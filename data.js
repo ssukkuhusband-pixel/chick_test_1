@@ -2,25 +2,25 @@
 // ALL RECIPES DATA (확장된 레시피 풀)
 // ===========================
 const ALL_RECIPES = [
-  // normal — 소박한 요리 (5~10초)
-  { id:'egg',    name:'계란후라이', icon:'🍳', rarity:'normal', category:'양식', basePrice:100, cookTime:3000,  eatTime:2500, taste:15, deco:5,  health:20, abilities:['LV3: 조리-1s','LV5: 가격+20%','LV7: 팁+10%','LV10: 가격+50%'] },
-  { id:'salad',  name:'샐러드',    icon:'🥗', rarity:'normal', category:'양식', basePrice:150, cookTime:7000,  eatTime:2000, taste:10, deco:15, health:35, abilities:['LV3: 조리-1s','LV5: 가격+15%','LV7: 가격+15%','LV10: 가격+40%'] },
-  { id:'soup',   name:'수프',      icon:'🍲', rarity:'normal', category:'양식', basePrice:180, cookTime:10000, eatTime:2500, taste:20, deco:5,  health:25, abilities:['LV3: 가격+10%','LV5: 가격+20%','LV7: 조리-2s','LV10: 가격+50%'] },
-  { id:'rice',   name:'볶음밥',    icon:'🍚', rarity:'normal', category:'한식', basePrice:160, cookTime:8000,  eatTime:2500, taste:18, deco:8,  health:22, abilities:['LV3: 조리-1s','LV5: 가격+15%','LV7: 팁+10%','LV10: 가격+40%'] },
-  // rare — (12~20초)
-  { id:'pasta',  name:'파스타',    icon:'🍝', rarity:'rare',   category:'양식', basePrice:250, cookTime:15000, eatTime:3500, taste:28, deco:20, health:10, abilities:['LV3: 가격+10%','LV5: 가격+25%','LV7: 가격+15%','LV10: 가격+60%'] },
-  { id:'pizza',  name:'피자',      icon:'🍕', rarity:'rare',   category:'양식', basePrice:300, cookTime:20000, eatTime:3000, taste:22, deco:30, health:8,  abilities:['LV3: 가격+10%','LV5: 가격+20%','LV7: 팁+15%','LV10: 가격+55%'] },
-  { id:'curry',  name:'카레',      icon:'🍛', rarity:'rare',   category:'한식', basePrice:220, cookTime:12000, eatTime:3000, taste:25, deco:12, health:30, abilities:['LV3: 조리-2s','LV5: 가격+20%','LV7: 가격+15%','LV10: 가격+50%'] },
-  { id:'ramen',  name:'라멘',      icon:'🍜', rarity:'rare',   category:'일식', basePrice:280, cookTime:18000, eatTime:3000, taste:35, deco:10, health:18, abilities:['LV3: 가격+10%','LV5: 조리-2s','LV7: 가격+25%','LV10: 가격+60%'] },
-  // epic — (25~35초)
-  { id:'steak',  name:'스테이크',  icon:'🥩', rarity:'epic',   category:'양식', basePrice:400, cookTime:30000, eatTime:4000, taste:40, deco:25, health:12, abilities:['LV3: 가격+15%','LV5: 가격+30%','LV7: 팁+20%','LV10: 가격+70%'] },
-  { id:'sushi',  name:'스시',      icon:'🍣', rarity:'epic',   category:'일식', basePrice:450, cookTime:25000, eatTime:3500, taste:32, deco:42, health:28, abilities:['LV3: 가격+15%','LV5: 가격+30%','LV7: 팁+20%','LV10: 가격+80%'] },
-  { id:'cake',   name:'케이크',    icon:'🍰', rarity:'epic',   category:'디저트', basePrice:350, cookTime:28000, eatTime:3000, taste:25, deco:48, health:5,  abilities:['LV3: 가격+15%','LV5: 피드확률+20%','LV7: 가격+30%','LV10: 가격+70%'] },
-  // legend — (40~50초)
-  { id:'lobster',name:'랍스터',    icon:'🦞', rarity:'legend', category:'양식', basePrice:600, cookTime:42000, eatTime:4000, taste:45, deco:35, health:15, abilities:['LV3: 가격+20%','LV5: 가격+40%','LV7: 팁+30%','LV10: 가격+100%'] },
-  { id:'wagyu',  name:'와규',      icon:'🥓', rarity:'legend', category:'일식', basePrice:700, cookTime:50000, eatTime:4500, taste:50, deco:30, health:10, abilities:['LV3: 가격+20%','LV5: 가격+50%','LV7: 가격+25%','LV10: 가격+120%'] },
-  // myth — (60초)
-  { id:'truffle',name:'트러플요리',icon:'🍄', rarity:'myth',   category:'양식', basePrice:1000,cookTime:60000, eatTime:5000, taste:48, deco:45, health:8,  abilities:['LV3: 전체가격+5%','LV5: 가격+60%','LV7: 팁+40%','LV10: 가격+150%'] },
+  // normal — 소박한 요리 (1.5~5초)
+  { id:'egg',    name:'계란후라이', icon:'🍳', rarity:'normal', category:'양식', basePrice:100, cookTime:1500,  eatTime:3000,  taste:15, deco:5,  health:20, abilities:['LV3: 조리-1s','LV5: 가격+20%','LV7: 팁+10%','LV10: 가격+50%'] },
+  { id:'salad',  name:'샐러드',    icon:'🥗', rarity:'normal', category:'양식', basePrice:150, cookTime:3500,  eatTime:7000,  taste:10, deco:15, health:35, abilities:['LV3: 조리-1s','LV5: 가격+15%','LV7: 가격+15%','LV10: 가격+40%'] },
+  { id:'soup',   name:'수프',      icon:'🍲', rarity:'normal', category:'양식', basePrice:180, cookTime:5000,  eatTime:10000, taste:20, deco:5,  health:25, abilities:['LV3: 가격+10%','LV5: 가격+20%','LV7: 조리-2s','LV10: 가격+50%'] },
+  { id:'rice',   name:'볶음밥',    icon:'🍚', rarity:'normal', category:'한식', basePrice:160, cookTime:4000,  eatTime:8000,  taste:18, deco:8,  health:22, abilities:['LV3: 조리-1s','LV5: 가격+15%','LV7: 팁+10%','LV10: 가격+40%'] },
+  // rare — (6~10초)
+  { id:'pasta',  name:'파스타',    icon:'🍝', rarity:'rare',   category:'양식', basePrice:250, cookTime:7500,  eatTime:15000, taste:28, deco:20, health:10, abilities:['LV3: 가격+10%','LV5: 가격+25%','LV7: 가격+15%','LV10: 가격+60%'] },
+  { id:'pizza',  name:'피자',      icon:'🍕', rarity:'rare',   category:'양식', basePrice:300, cookTime:10000, eatTime:20000, taste:22, deco:30, health:8,  abilities:['LV3: 가격+10%','LV5: 가격+20%','LV7: 팁+15%','LV10: 가격+55%'] },
+  { id:'curry',  name:'카레',      icon:'🍛', rarity:'rare',   category:'한식', basePrice:220, cookTime:6000,  eatTime:12000, taste:25, deco:12, health:30, abilities:['LV3: 조리-2s','LV5: 가격+20%','LV7: 가격+15%','LV10: 가격+50%'] },
+  { id:'ramen',  name:'라멘',      icon:'🍜', rarity:'rare',   category:'일식', basePrice:280, cookTime:9000,  eatTime:18000, taste:35, deco:10, health:18, abilities:['LV3: 가격+10%','LV5: 조리-2s','LV7: 가격+25%','LV10: 가격+60%'] },
+  // epic — (12.5~15초)
+  { id:'steak',  name:'스테이크',  icon:'🥩', rarity:'epic',   category:'양식', basePrice:400, cookTime:15000, eatTime:30000, taste:40, deco:25, health:12, abilities:['LV3: 가격+15%','LV5: 가격+30%','LV7: 팁+20%','LV10: 가격+70%'] },
+  { id:'sushi',  name:'스시',      icon:'🍣', rarity:'epic',   category:'일식', basePrice:450, cookTime:12500, eatTime:25000, taste:32, deco:42, health:28, abilities:['LV3: 가격+15%','LV5: 가격+30%','LV7: 팁+20%','LV10: 가격+80%'] },
+  { id:'cake',   name:'케이크',    icon:'🍰', rarity:'epic',   category:'디저트', basePrice:350, cookTime:14000, eatTime:28000, taste:25, deco:48, health:5,  abilities:['LV3: 가격+15%','LV5: 피드확률+20%','LV7: 가격+30%','LV10: 가격+70%'] },
+  // legend — (21~25초)
+  { id:'lobster',name:'랍스터',    icon:'🦞', rarity:'legend', category:'양식', basePrice:600, cookTime:21000, eatTime:42000, taste:45, deco:35, health:15, abilities:['LV3: 가격+20%','LV5: 가격+40%','LV7: 팁+30%','LV10: 가격+100%'] },
+  { id:'wagyu',  name:'와규',      icon:'🥓', rarity:'legend', category:'일식', basePrice:700, cookTime:25000, eatTime:50000, taste:50, deco:30, health:10, abilities:['LV3: 가격+20%','LV5: 가격+50%','LV7: 가격+25%','LV10: 가격+120%'] },
+  // myth — (30초)
+  { id:'truffle',name:'트러플요리',icon:'🍄', rarity:'myth',   category:'양식', basePrice:1000,cookTime:30000, eatTime:60000, taste:48, deco:45, health:8,  abilities:['LV3: 전체가격+5%','LV5: 가격+60%','LV7: 팁+40%','LV10: 가격+150%'] },
 ];
 
 const RARITY_NAMES = { normal:'노멀', rare:'레어', epic:'에픽', legend:'레전드', myth:'신화' };
@@ -62,6 +62,7 @@ const EXPANSIONS = [
   { id:'e8', name:'주방 확장 3', desc:'화구 1개 추가 (총 4개)', icon:'🔥', cost:15000, type:'stove' },
   { id:'e9', name:'일곱 번째 식탁', desc:'식탁 1개 추가 (총 7개)', icon:'🪑', cost:20000, type:'table' },
   { id:'e10',name:'여덟 번째 식탁', desc:'식탁 1개 추가 (총 8개)', icon:'🪑', cost:30000, type:'table' },
+  { id:'e11',name:'주방 확장 4', desc:'화구 1개 추가 (총 5개)', icon:'🔥', cost:50000, type:'stove' },
 ];
 
 const TABLE_POSITIONS = [
@@ -71,8 +72,20 @@ const TABLE_POSITIONS = [
 ];
 
 const STOVE_POSITIONS = [
-  { top:50, left:14 }, { top:50, left:98 }, { top:50, left:182 }, { top:50, left:266 },
+  { top:30, left:6 }, { top:30, left:76 }, { top:30, left:146 }, { top:30, left:216 }, { top:30, left:286 },
 ];
+
+// 가판대 위치 (최대 5개)
+const STAND_POSITIONS = [
+  { left:20 }, { left:92 }, { left:164 }, { left:236 }, { left:308 },
+];
+
+
+const VILLAGER_SPAWN_INTERVAL = 800;   // 0.8초마다 주민 스폰 시도
+const VILLAGER_MAX = 14;               // 거리 최대 주민 수 (복작복작)
+const VILLAGER_SPEED_MIN = 0.15;       // 최소 이동속도 (px/frame)
+const VILLAGER_SPEED_MAX = 0.4;        // 최대 이동속도
+const CUSTOMER_FOOD_WAIT = 5000;
 
 // ===========================
 // CUSTOMERS DATA (50명)

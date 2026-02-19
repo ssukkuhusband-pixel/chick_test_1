@@ -32,22 +32,34 @@
 
     <div id="kitchen-area">
       <div id="kitchen-bg"></div>
-      <div id="stove-queue-display"></div>
-      <!-- 화구 4개 (동적으로 active) -->
+      <!-- 화구 5개 (동적으로 active) -->
       <div class="stove" id="stove-0"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
       <div class="stove" id="stove-1"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
       <div class="stove" id="stove-2"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
       <div class="stove" id="stove-3"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
+      <div class="stove" id="stove-4"><span class="steam">💨</span><span class="stove-icon">🍳</span><div class="progress-bar"><div class="progress-fill"></div></div><span class="dish-label"></span></div>
     </div>
 
     <div id="chef">🐤<div id="chef-bubble">바쁘거덩요</div></div>
+
+    <!-- 가판대 영역 -->
+    <div id="stand-area">
+      <div class="food-stand" id="stand-0"></div>
+      <div class="food-stand" id="stand-1"></div>
+      <div class="food-stand" id="stand-2"></div>
+      <div class="food-stand" id="stand-3"></div>
+      <div class="food-stand" id="stand-4"></div>
+    </div>
 
     <div id="dining-area">
       <!-- 식탁 8개 (동적으로 active) -->
     </div>
 
-    <div id="waiting-area"><span id="waiting-label">대기</span></div>
+    <!-- 주민 영역 -->
+    <div id="villager-area"></div>
     <div id="entrance"><div id="entrance-gate"></div></div>
+    <div id="fence-left"></div>
+    <div id="fence-right"></div>
     <div class="ground-deco" style="bottom:195px;left:10px;font-size:18px;">🌿</div>
     <div class="ground-deco" style="bottom:175px;right:15px;font-size:14px;">🍃</div>
   </div>
@@ -191,6 +203,18 @@
   <div class="recipe-detail-overlay" id="recipe-detail-modal">
     <div class="recipe-detail-card" id="recipe-detail-card"></div>
     <button class="btn-primary gacha-result-confirm" onclick="closeRecipeDetail()" style="margin-top:16px">닫기</button>
+  </div>
+
+  <!-- 화구 슬롯 바 -->
+  <div id="stove-slot-bar"></div>
+
+  <!-- 레시피 선택 모달 -->
+  <div class="recipe-picker-overlay" id="recipe-picker-modal">
+    <div class="recipe-picker-card">
+      <div class="recipe-picker-header">🍳 요리 선택</div>
+      <div class="recipe-picker-grid" id="recipe-picker-grid"></div>
+      <button class="btn-primary" onclick="closeRecipePicker()" style="margin-top:12px;padding:8px 32px;border-radius:16px;">취소</button>
+    </div>
   </div>
 
   <div id="bottom-nav">

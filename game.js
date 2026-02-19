@@ -3,8 +3,8 @@
 // ===========================
 function initStovesAndTables() {
   state.stoves = [];
-  for (let i = 0; i < 4; i++) {
-    state.stoves.push({ id:i, cooking:false, recipe:null, progress:0, startTime:0, tableId:null });
+  for (let i = 0; i < 5; i++) {
+    state.stoves.push({ id:i, cooking:false, recipe:null, progress:0, startTime:0, assignedRecipeId:null, queue:0 });
   }
   state.tables = [];
   for (let i = 0; i < 8; i++) {
@@ -26,10 +26,10 @@ function buildDiningArea() {
     div.id = 'table-' + i;
     div.style.cssText = `top:${pos.top}px;left:${pos.left}px;`;
     div.innerHTML = `
-      <div class="order-bubble"></div>
       <div class="customer-bubble"></div>
       <div class="seated-customer"></div>
       <div class="eating-indicator"></div>
+      <div class="eat-progress-bar"><div class="eat-progress-fill"></div></div>
       <div class="table-surface">
         <div class="table-cloth"></div>
         <div class="served-dish"></div>
@@ -43,12 +43,7 @@ function buildDiningArea() {
       const sc = div.querySelector('.seated-customer');
       sc.textContent = table.customer.emoji;
       sc.classList.add('show');
-      if(table.status === 'waiting_order') {
-        const ob = div.querySelector('.order-bubble');
-        ob.textContent = table.recipe.icon;
-        ob.classList.add('show');
-        ob.onclick = () => takeOrder(table);
-      } else if(table.status === 'eating') {
+      if(table.status === 'eating') {
         div.querySelector('.served-dish').textContent = table.recipe.icon;
         div.querySelector('.served-dish').classList.add('show');
         div.querySelector('.eating-indicator').textContent = '😋';
@@ -61,7 +56,7 @@ function buildDiningArea() {
 }
 
 function updateStoveVisibility() {
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     const el = document.getElementById('stove-' + i);
     const pos = STOVE_POSITIONS[i];
     el.style.top = pos.top + 'px';
@@ -86,9 +81,9 @@ const promoGauge = document.getElementById('promo-gauge');
 const promoBtn = document.getElementById('promo-btn');
 const chefEl = document.getElementById('chef');
 const chefBubble = document.getElementById('chef-bubble');
-const waitingArea = document.getElementById('waiting-area');
+const villagerArea = document.getElementById('villager-area');
 const toastEl = document.getElementById('toast');
-const stoveQueueDisplay = document.getElementById('stove-queue-display');
+const stoveSlotBar = document.getElementById('stove-slot-bar');
 const gameContainer = document.getElementById('game-container');
 
 // ===========================
@@ -199,9 +194,6 @@ function getCustomerLeavingSpeech(customerId, isPositive) {
 function showCustomerBubble(tableId, text, duration) {
   const el = document.getElementById('table-' + tableId);
   if(!el) return;
-  // order-bubble이 보이면 대사를 표시하지 않음
-  const ob = el.querySelector('.order-bubble');
-  if(ob && ob.classList.contains('show')) return;
   const bubble = el.querySelector('.customer-bubble');
   if(!bubble) return;
   bubble.textContent = text;
@@ -210,41 +202,25 @@ function showCustomerBubble(tableId, text, duration) {
   bubble._bubbleTimer = setTimeout(() => bubble.classList.remove('show'), duration || 2500);
 }
 
-function showWaitingBubble(idx, text) {
-  const waitingCustomers = waitingArea.querySelectorAll('.waiting-customer');
-  if(idx >= waitingCustomers.length) return;
-  const span = waitingCustomers[idx];
-  // 기존 버블 제거
-  const existing = waitingArea.querySelector('.waiting-bubble');
-  if(existing) existing.remove();
-  // 새 버블 생성
-  const bubble = document.createElement('div');
-  bubble.className = 'waiting-bubble';
-  bubble.textContent = text;
-  bubble.style.left = span.offsetLeft + 'px';
-  waitingArea.appendChild(bubble);
-  requestAnimationFrame(() => requestAnimationFrame(() => bubble.classList.add('show')));
-  setTimeout(() => {
-    bubble.classList.remove('show');
-    setTimeout(() => bubble.remove(), 300);
-  }, 2500);
-}
-
 // ===========================
-// PROMO
+// PROMO (주민 유인)
 // ===========================
 promoBtn.addEventListener('click', () => {
   state.promoCount++;
   promoBtn.querySelector('.nav-icon').style.transform='scale(0.85)';
   setTimeout(()=>promoBtn.querySelector('.nav-icon').style.transform='',100);
   if(state.promoCount>=PROMO_CLICKS_NEEDED) {
-    state.promoCount=0; addCustomerToQueue(); showChefBubble('손님 오셨거덩요!');
+    state.promoCount=0;
+    // 주민 2~3명 스폰
+    const cnt = 2 + Math.floor(Math.random()*2);
+    for(let i=0; i<cnt; i++) setTimeout(()=>spawnVillager(), i*300);
+    showChefBubble('손님 오시거덩요!');
   }
   updateHUD();
 });
 
 // ===========================
-// CUSTOMER QUEUE
+// CUSTOMER HELPERS
 // ===========================
 function getEligibleCustomers() {
   return CUSTOMERS_DATA.filter(c => {
@@ -256,85 +232,7 @@ function getEligibleCustomers() {
     return true;
   });
 }
-function addCustomerToQueue() {
-  const eligible = getEligibleCustomers();
-  if(!eligible.length) return;
-  const isRare = Math.random() < 0.05;
-  const pool = isRare ? eligible.filter(c=>c.rare) : eligible.filter(c=>!c.rare);
-  const finalPool = pool.length ? pool : eligible.filter(c=>!c.rare);
-  if(!finalPool.length) return;
-  const picked = randomFrom(finalPool);
-  if(!state.discoveredCustomers.includes(picked.id)) {
-    state.discoveredCustomers.push(picked.id);
-    showToast(`📖 새로운 손님 발견: ${picked.name}!`);
-  }
-  state.waitingQueue.push({ customerId:picked.id, emoji:picked.emoji, name:picked.name, followers:picked.followers, rare:picked.rare||false });
-  renderWaitingQueue(); trySeatingCustomer();
-}
-function renderWaitingQueue() {
-  waitingArea.querySelectorAll('.waiting-customer').forEach(el=>el.remove());
-  state.waitingQueue.forEach((c,i) => {
-    const el=document.createElement('span'); el.className='waiting-customer'; el.textContent=c.emoji;
-    el.style.transitionDelay=(i*0.05)+'s'; waitingArea.appendChild(el);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
-  });
-}
 
-// ===========================
-// SEATING
-// ===========================
-function trySeatingCustomer() {
-  while(state.waitingQueue.length) {
-    const empty = state.tables.find(t => t.id < state.numTables && !t.occupied);
-    if(!empty) break;
-    const c = state.waitingQueue.shift();
-    seatCustomer(empty, c);
-  }
-  renderWaitingQueue();
-}
-function seatCustomer(table, customer) {
-  table.occupied=true; table.customer=customer; table.status='waiting_order';
-  const allOwned = getActiveRecipes();
-  let recipe = null;
-  const cData = customer.customerId ? CUSTOMERS_DATA.find(c=>c.id===customer.customerId) : null;
-  if(cData && cData.preference) {
-    const pref = cData.preference;
-    if(pref.recipeId) {
-      const preferred = allOwned.find(r=>r.id===pref.recipeId);
-      recipe = preferred || randomFrom(allOwned);
-    } else if(pref.category) {
-      const catRecipes = allOwned.filter(r=>r.category===pref.category);
-      recipe = catRecipes.length ? randomFrom(catRecipes) : randomFrom(allOwned);
-    }
-  }
-  if(!recipe) recipe = randomFrom(allOwned);
-  table.recipe = recipe;
-  const el=document.getElementById('table-'+table.id);
-  el.querySelector('.seated-customer').textContent=customer.emoji;
-  el.querySelector('.seated-customer').classList.add('show');
-  setTimeout(()=>{
-    const ob=el.querySelector('.order-bubble');
-    ob.textContent=table.recipe.icon; ob.classList.add('show');
-    ob.onclick=()=>takeOrder(table);
-  },600);
-}
-
-// ===========================
-// ORDER
-// ===========================
-function takeOrder(table) {
-  if(table.status!=='waiting_order') return;
-  table.status='ordered';
-  const el=document.getElementById('table-'+table.id);
-  const ob=el.querySelector('.order-bubble'); ob.classList.remove('show'); ob.onclick=null;
-  showChefBubble('주문 받았거덩요!');
-  const free = state.stoves.find(s => s.id < state.numStoves && !s.cooking);
-  if(free) startCooking(free,table.recipe,table.id);
-  else { state.stoveQueue.push({recipe:table.recipe,tableId:table.id}); updateStoveQueueDisplay(); showToast('화구 대기 중...'); }
-}
-function updateStoveQueueDisplay() {
-  stoveQueueDisplay.textContent = state.stoveQueue.length ? '대기: '+state.stoveQueue.map(q=>q.recipe.icon).join('') : '';
-}
 
 // ===========================
 // COOKING
@@ -355,26 +253,12 @@ function getCookTimeMultiplier() {
   return Math.max(0.3, mult);
 }
 
-function startCooking(stove, recipe, tableId) {
-  stove.cooking=true; stove.recipe=recipe; stove.tableId=tableId;
+function startCooking(stove, recipe) {
+  stove.cooking=true; stove.recipe=recipe;
   stove.startTime=Date.now(); stove.progress=0;
   const el=document.getElementById('stove-'+stove.id);
   el.classList.add('cooking'); el.querySelector('.dish-label').textContent=recipe.name;
   moveChefToStove(stove.id); updateChefState();
-  // 대기가 길어질 때 대사 (cookTime > 20초, cookTime의 60% 후, 25% 확률)
-  const cookMult = getCookTimeMultiplier();
-  const actualCookTime = recipe.cookTime * cookMult;
-  if(actualCookTime > 20000 && Math.random() < 0.25) {
-    const table = state.tables.find(t => t.id === tableId);
-    if(table && table.customer && table.customer.customerId) {
-      const waitLongCustomerId = table.customer.customerId;
-      const waitLongTableId = tableId;
-      setTimeout(() => {
-        const speech = getCustomerSpeech(waitLongCustomerId, 'waiting_long');
-        if(speech) showCustomerBubble(waitLongTableId, speech, 3000);
-      }, Math.floor(actualCookTime * 0.6));
-    }
-  }
 }
 function updateCooking() {
   const now=Date.now();
@@ -386,6 +270,9 @@ function updateCooking() {
     const progress=Math.min(elapsed/totalTime,1); stove.progress=progress;
     const el=document.getElementById('stove-'+stove.id);
     el.querySelector('.progress-fill').style.width=(progress*100)+'%';
+    // 하단 슬롯 프로그레스 바도 업데이트
+    const slotFill = document.querySelector('#slot-'+stove.id+' .slot-progress-fill');
+    if(slotFill) slotFill.style.width=(progress*100)+'%';
     if(progress>=1) completeCooking(stove);
   });
   updateChefState();
@@ -396,12 +283,27 @@ function completeCooking(stove) {
   el.classList.remove('cooking'); el.querySelector('.progress-fill').style.width='0%';
   el.querySelector('.dish-label').textContent='';
   showChefBubble('요리 완성이거덩요!');
-  serveFood(stove.tableId,stove.recipe);
-  stove.recipe=null; stove.tableId=null;
-  if(state.stoveQueue.length) {
-    const next=state.stoveQueue.shift(); updateStoveQueueDisplay();
-    setTimeout(()=>startCooking(stove,next.recipe,next.tableId),300);
+  // 완성된 요리를 가판대에 올리기
+  addToStand(stove.recipe.id);
+  // 완성 이펙트
+  const eff=document.createElement('div'); eff.className='cook-complete-effect'; eff.textContent=stove.recipe.icon;
+  eff.style.top=(STOVE_POSITIONS[stove.id].top+100)+'px'; eff.style.left=(STOVE_POSITIONS[stove.id].left+20+35)+'px';
+  gameContainer.appendChild(eff); setTimeout(()=>eff.remove(),800);
+  stove.recipe=null;
+  // 대기열 처리: 다음 요리 자동 시작
+  if(stove.queue > 0 && stove.assignedRecipeId) {
+    const nextRecipe = ALL_RECIPES.find(r=>r.id===stove.assignedRecipeId);
+    if(nextRecipe && canAddToStand(stove.assignedRecipeId)) {
+      stove.queue--;
+      setTimeout(()=>startCooking(stove, nextRecipe), 200);
+    } else {
+      // 가판대 가득 → 대기열 유지하되 조리 중단
+      if(!canAddToStand(stove.assignedRecipeId)) {
+        showToast('가판대 가득! 대기열 일시정지');
+      }
+    }
   }
+  renderStoveSlots();
 }
 
 // ===========================
@@ -415,6 +317,11 @@ function serveFood(tableId, recipe) {
   el.querySelector('.served-dish').classList.add('show');
   el.querySelector('.eating-indicator').textContent='😋';
   el.querySelector('.eating-indicator').classList.add('show');
+  // 식사 게이지 시작
+  table.eatStartTime = Date.now();
+  table.eatDuration = recipe.eatTime;
+  el.querySelector('.eat-progress-bar').classList.add('show');
+  el.querySelector('.eat-progress-fill').style.width = '100%';
   // 식사 중 대사 (eatTime의 50% 후, 30% 확률)
   if(table.customer && table.customer.customerId && Math.random() < 0.30) {
     const eatSpeechDelay = Math.floor(recipe.eatTime * 0.5);
@@ -443,10 +350,16 @@ function customerLeave(table, recipe) {
 
   table.status='empty'; table.occupied=false;
   const el=document.getElementById('table-'+table.id);
-  // 퇴장 대사가 보이도록 약간의 딜레이 후 hide (customer-bubble은 자체 타이머로 사라짐)
   el.querySelector('.seated-customer').classList.remove('show');
   el.querySelector('.served-dish').classList.remove('show');
   el.querySelector('.eating-indicator').classList.remove('show');
+  el.querySelector('.eat-progress-bar').classList.remove('show');
+  el.querySelector('.eat-progress-fill').style.width = '100%';
+  table.eatStartTime = 0;
+  table.eatDuration = 0;
+
+  // 퇴장 걸어가기 애니메이션
+  if(customer) animateCustomerExit(table.id, customer.emoji);
 
   // 방문 횟수 추적 & 단골 레벨업
   if(customerId) {
@@ -531,7 +444,6 @@ function customerLeave(table, recipe) {
   }
 
   updateHUD(); table.customer=null; table.recipe=null;
-  setTimeout(()=>trySeatingCustomer(),500);
 }
 
 // ===========================
@@ -539,7 +451,7 @@ function customerLeave(table, recipe) {
 // ===========================
 function moveChefToStove(id) {
   const pos = STOVE_POSITIONS[id];
-  chefEl.style.left=(pos.left+5)+'px'; chefEl.style.top=(pos.top+95)+'px';
+  chefEl.style.left=(pos.left+5)+'px'; chefEl.style.top=(pos.top+100)+'px';
 }
 function updateChefState() {
   const cooking=state.stoves.filter(s=>s.id<state.numStoves&&s.cooking);
@@ -549,15 +461,15 @@ function updateChefState() {
     const npc = staffNPCElements['headchef'];
     if(cooking.length && npc) {
       npc.classList.add('busy');
-      if(cooking.length>1) { const i=Math.floor(Date.now()/1500)%cooking.length; const p=STOVE_POSITIONS[cooking[i].id]; npc.style.top=(p.top+95)+'px'; npc.style.left=(p.left+5)+'px'; }
-      else { const p=STOVE_POSITIONS[cooking[0].id]; npc.style.top=(p.top+95)+'px'; npc.style.left=(p.left+5)+'px'; }
+      if(cooking.length>1) { const i=Math.floor(Date.now()/1500)%cooking.length; const p=STOVE_POSITIONS[cooking[i].id]; npc.style.top=(p.top+100)+'px'; npc.style.left=(p.left+5)+'px'; }
+      else { const p=STOVE_POSITIONS[cooking[0].id]; npc.style.top=(p.top+100)+'px'; npc.style.left=(p.left+5)+'px'; }
     } else if(npc) {
-      npc.classList.remove('busy'); npc.style.top='210px'; npc.style.left='100px';
+      npc.classList.remove('busy'); npc.style.top='190px'; npc.style.left='100px';
     }
     return;
   }
   // 기본 행동
-  if(!cooking.length) { chefEl.classList.remove('cooking'); chefEl.style.left='170px'; chefEl.style.top='210px'; return; }
+  if(!cooking.length) { chefEl.classList.remove('cooking'); chefEl.style.left='170px'; chefEl.style.top='190px'; return; }
   chefEl.classList.add('cooking');
   if(cooking.length>1) { const i=Math.floor(Date.now()/1500)%cooking.length; moveChefToStove(cooking[i].id); }
   else moveChefToStove(cooking[0].id);
@@ -787,6 +699,7 @@ function doGacha(count) {
     gachaResultIndex = 0;
     showNextGachaResult();
     renderGacha();
+    renderStoveSlots();
   }, 800);
 }
 
@@ -908,6 +821,7 @@ function renderShopExpand() {
   const container = document.getElementById('shop-expand');
   let html = `<div style="font-size:12px;color:#aaa;margin-bottom:12px">현재: 식탁 ${state.numTables}개 | 화구 ${state.numStoves}개</div>`;
   html += '<div class="expand-list">';
+  // 기존 확장 (식탁/화구)
   EXPANSIONS.forEach(ex => {
     const done = state.expansionsDone.includes(ex.id);
     const isNext = !done && !EXPANSIONS.slice(0, EXPANSIONS.indexOf(ex)).some(e=>!state.expansionsDone.includes(e.id));
@@ -937,16 +851,16 @@ function doExpand(exId) {
   if(ex.type==='table') {
     state.numTables++;
     buildDiningArea();
+    addMyFeed(`식탁이 ${state.numTables}개가 되었어요! 🪑`, '🏠');
   } else {
     state.numStoves++;
     updateStoveVisibility();
+    renderStoveSlots();
+    addMyFeed(`화구가 ${state.numStoves}개로 늘었어요! 🔥`, '🏠');
   }
   updateHUD();
   showToast(`${ex.name} 완료!`);
   showChefBubble('가게가 커졌거덩요!');
-  // 병스타그램: 확장 피드
-  if(ex.type==='table') addMyFeed(`식탁이 ${state.numTables}개가 되었어요! 🪑`, '🏠');
-  else addMyFeed(`화구가 ${state.numStoves}개로 늘었어요! 🔥`, '🏠');
   renderShopExpand();
 }
 
@@ -998,7 +912,8 @@ function getRankMissionProgress(mission) {
 }
 
 function renderProfileInfo() {
-  const expansionPct = Math.round(state.expansionsDone.length / EXPANSIONS.length * 100);
+  const totalExpansions = EXPANSIONS.length;
+  const expansionPct = Math.round(state.expansionsDone.length / totalExpansions * 100);
   const interiorScore = getInteriorScore();
   const recipeScore = getRecipeScore();
   document.getElementById('profile-info-tab').innerHTML = `
@@ -1008,7 +923,7 @@ function renderProfileInfo() {
         <div class="ps-info">
           <div class="ps-label">가게 확장도</div>
           <div class="ps-value">${expansionPct}%</div>
-          <div class="ps-sub">${state.expansionsDone.length} / ${EXPANSIONS.length} 완료</div>
+          <div class="ps-sub">${state.expansionsDone.length} / ${totalExpansions} 완료</div>
         </div>
       </div>
       <div class="profile-stat-card">
@@ -1601,7 +1516,7 @@ function closeCustomerDetail() {
 // ===========================
 setInterval(()=>{
   const cooking=state.stoves.some(s=>s.id<state.numStoves&&s.cooking);
-  if(!cooking&&!state.waitingQueue.length) {
+  if(!cooking&&!villagers.length) {
     if(state.hiredStaff['headchef']) {
       showChefBubble(randomFrom(['가게가 잘 돌아가거덩요~','직원들 믿음직하거덩요!','나는 사장이거덩요~','오늘도 평화거덩요~']));
       showNPCBubble('headchef', randomFrom(STAFF_DATA.find(s=>s.id==='headchef').speeches));
@@ -1610,17 +1525,6 @@ setInterval(()=>{
     }
   }
 }, 8000);
-
-// 대기열 손님 대사 (10초마다 20% 확률)
-setInterval(() => {
-  if(state.waitingQueue.length === 0) return;
-  if(Math.random() > 0.20) return;
-  const idx = Math.floor(Math.random() * state.waitingQueue.length);
-  const customer = state.waitingQueue[idx];
-  const speech = getCustomerSpeech(customer.customerId, 'waiting');
-  if(!speech) return;
-  showWaitingBubble(idx, speech);
-}, 10000);
 
 // 5명 서빙할 때마다 레시피 책 1개 획득
 let lastBookDrop = 0;
@@ -2025,10 +1929,10 @@ function initStaffNPC(staffId) {
   npc.className = 'npc-character npc-idle';
   npc.id = 'npc-'+staffId;
   npc.innerHTML = `${staff.emoji}<div class="npc-bubble"></div>`;
-  if(staffId==='headchef') { npc.style.top='210px'; npc.style.left='100px'; }
-  else if(staffId==='waiter') { npc.style.top='370px'; npc.style.left='180px'; }
+  if(staffId==='headchef') { npc.style.top='190px'; npc.style.left='100px'; }
+  else if(staffId==='waiter') { npc.style.top='350px'; npc.style.left='180px'; }
   else if(staffId==='pr') { npc.style.top='630px'; npc.style.left='300px'; }
-  else if(staffId==='server') { npc.style.top='400px'; npc.style.left='60px'; }
+  else if(staffId==='server') { npc.style.top='380px'; npc.style.left='60px'; }
   document.getElementById('game-area').appendChild(npc);
   staffNPCElements[staffId] = npc;
 }
@@ -2049,7 +1953,7 @@ function startPlayerRoaming() {
   if(playerRoamInterval) return;
   playerRoamInterval = setInterval(()=>{
     if(!state.hiredStaff['headchef']) { stopPlayerRoaming(); return; }
-    const top = 320 + Math.floor(Math.random()*230);
+    const top = 300 + Math.floor(Math.random()*220);
     const left = 20 + Math.floor(Math.random()*320);
     chefEl.style.top = top+'px';
     chefEl.style.left = left+'px';
@@ -2059,39 +1963,28 @@ function stopPlayerRoaming() {
   if(playerRoamInterval) { clearInterval(playerRoamInterval); playerRoamInterval=null; }
 }
 
-// --- Waiter Auto-Order ---
+// --- Waiter Visual ---
 let waiterInterval = null;
-let waiterBusy = false;
 function startWaiterBehavior() {
   if(waiterInterval) return;
   waiterInterval = setInterval(()=>{
-    if(!state.hiredStaff['waiter'] || waiterBusy) return;
-    const waitingTable = state.tables.find(t=>t.id<state.numTables && t.status==='waiting_order');
-    if(!waitingTable) {
-      if(Math.random()<0.2) {
-        const top = 320+Math.floor(Math.random()*200);
-        const left = 20+Math.floor(Math.random()*320);
-        const npc = staffNPCElements['waiter'];
-        if(npc) { npc.style.top=top+'px'; npc.style.left=left+'px'; }
-      }
-      return;
-    }
-    waiterBusy = true;
+    if(!state.hiredStaff['waiter']) return;
     const staff = STAFF_DATA.find(s=>s.id==='waiter');
-    const level = state.hiredStaff['waiter'].level;
-    const delay = Math.max(staff.minOrderDelay, staff.baseEffects.orderDelay - staff.levelEffects.orderDelayReduction*(level-1));
-    const tablePos = TABLE_POSITIONS[waitingTable.id];
     const npc = staffNPCElements['waiter'];
-    if(npc) { npc.style.top=(310+tablePos.top-30)+'px'; npc.style.left=(10+tablePos.left+39)+'px'; }
-    showNPCBubble('waiter', randomFrom(staff.speeches));
-    setTimeout(()=>{
-      if(waitingTable.status==='waiting_order') {
-        takeOrder(waitingTable);
-        state.hiredStaff['waiter'].totalWorkTime += delay;
-      }
-      waiterBusy = false;
-    }, delay);
-  }, 500);
+    if(!npc) return;
+    const occupied = state.tables.filter(t=>t.id<state.numTables && t.occupied);
+    if(occupied.length) {
+      const table = randomFrom(occupied);
+      const tablePos = TABLE_POSITIONS[table.id];
+      npc.style.top=(320+tablePos.top-30)+'px'; npc.style.left=(10+tablePos.left+39)+'px';
+      if(Math.random()<0.3) showNPCBubble('waiter', randomFrom(staff.speeches));
+      state.hiredStaff['waiter'].totalWorkTime += 3000;
+    } else {
+      const top = 300+Math.floor(Math.random()*200);
+      const left = 20+Math.floor(Math.random()*320);
+      npc.style.top=top+'px'; npc.style.left=left+'px';
+    }
+  }, 3000);
 }
 
 // --- PR Auto Customer ---
@@ -2107,7 +2000,7 @@ function startPRBehavior() {
       if(!state.hiredStaff['pr']) return;
       showNPCBubble('pr', randomFrom(staff.speeches));
       setTimeout(()=>{
-        addCustomerToQueue();
+        spawnVillager();
         state.hiredStaff['pr'].totalWorkTime += cooldown;
       }, 1000);
       scheduleNext();
@@ -2129,12 +2022,12 @@ function startServerBehavior() {
     if(occupiedTables.length) {
       const table = randomFrom(occupiedTables);
       const tablePos = TABLE_POSITIONS[table.id];
-      npc.style.top=(310+tablePos.top-20)+'px';
+      npc.style.top=(320+tablePos.top-20)+'px';
       npc.style.left=(10+tablePos.left+60)+'px';
       showNPCBubble('server', randomFrom(staff.speeches));
       state.hiredStaff['server'].totalWorkTime += 5000;
     } else {
-      const top = 340+Math.floor(Math.random()*200);
+      const top = 320+Math.floor(Math.random()*200);
       const left = 20+Math.floor(Math.random()*320);
       npc.style.top=top+'px'; npc.style.left=left+'px';
     }
@@ -2157,11 +2050,568 @@ function initExistingStaff() {
 }
 
 // ===========================
+// STOVE SLOT BAR (화구 슬롯)
+// ===========================
+let slotLongPressTimers = {};
+
+function renderStoveSlots() {
+  let html = '';
+  for(let i = 0; i < state.numStoves; i++) {
+    const stove = state.stoves[i];
+    const recipeId = stove.assignedRecipeId;
+    if(!recipeId) {
+      // 빈 슬롯
+      html += `<div class="stove-slot empty" id="slot-${i}"
+        onclick="tapStoveSlot(${i})"
+        ontouchstart="slotTouchStart(${i},event)" ontouchend="slotTouchEnd(${i})" ontouchmove="slotTouchCancel(${i})"
+        onmousedown="slotMouseDown(${i},event)" onmouseup="slotMouseUp(${i})" onmouseleave="slotMouseCancel(${i})">
+        <span class="slot-plus">+</span>
+      </div>`;
+    } else {
+      const recipe = ALL_RECIPES.find(r=>r.id===recipeId);
+      const cookTime = (recipe.cookTime * getCookTimeMultiplier() / 1000).toFixed(0);
+      const isCooking = stove.cooking;
+      const cls = isCooking ? 'cooking' : 'assigned';
+      const queueCount = stove.queue || 0;
+      html += `<div class="stove-slot ${cls}" id="slot-${i}"
+        onclick="tapStoveSlot(${i})"
+        ontouchstart="slotTouchStart(${i},event)" ontouchend="slotTouchEnd(${i})" ontouchmove="slotTouchCancel(${i})"
+        onmousedown="slotMouseDown(${i},event)" onmouseup="slotMouseUp(${i})" onmouseleave="slotMouseCancel(${i})">
+        <span class="slot-icon">${recipe.icon}</span>
+        ${!isCooking ? `<span class="slot-time">${cookTime}s</span>` : ''}
+        ${isCooking ? `<div class="slot-progress"><div class="slot-progress-fill" style="width:${(stove.progress*100)}%"></div></div>` : ''}
+        ${queueCount > 0 ? `<span class="slot-queue">${queueCount}</span>` : ''}
+      </div>`;
+    }
+  }
+  stoveSlotBar.innerHTML = html;
+}
+
+// 롱프레스 처리 (레시피 교체)
+function slotTouchStart(slotId, e) {
+  slotLongPressTimers[slotId] = setTimeout(() => {
+    slotLongPressTimers[slotId] = 'fired';
+    openRecipePicker(slotId);
+  }, 500);
+}
+function slotTouchEnd(slotId) {
+  if(slotLongPressTimers[slotId] === 'fired') {
+    // 롱프레스 발동 → 클릭 이벤트 무시를 위해 플래그 설정
+    slotLongPressTimers[slotId] = 'consumed';
+    return;
+  }
+  clearTimeout(slotLongPressTimers[slotId]);
+  delete slotLongPressTimers[slotId];
+}
+function slotTouchCancel(slotId) {
+  clearTimeout(slotLongPressTimers[slotId]);
+  delete slotLongPressTimers[slotId];
+}
+
+// 마우스 롱프레스 (PC 지원)
+let slotMouseTimers = {};
+function slotMouseDown(slotId, e) {
+  if(e.button !== 0) return; // 좌클릭만
+  slotMouseTimers[slotId] = setTimeout(() => {
+    slotMouseTimers[slotId] = 'fired';
+    openRecipePicker(slotId);
+  }, 500);
+}
+function slotMouseUp(slotId) {
+  if(slotMouseTimers[slotId] === 'fired') {
+    slotMouseTimers[slotId] = 'consumed';
+    return;
+  }
+  clearTimeout(slotMouseTimers[slotId]);
+  delete slotMouseTimers[slotId];
+}
+function slotMouseCancel(slotId) {
+  clearTimeout(slotMouseTimers[slotId]);
+  delete slotMouseTimers[slotId];
+}
+
+function tapStoveSlot(slotId) {
+  // 롱프레스로 이미 처리됨 (터치 or 마우스)
+  if(slotLongPressTimers[slotId] === 'consumed') {
+    delete slotLongPressTimers[slotId];
+    return;
+  }
+  if(slotMouseTimers[slotId] === 'consumed') {
+    delete slotMouseTimers[slotId];
+    return;
+  }
+
+  const stove = state.stoves[slotId];
+  if(!stove) return;
+
+  // 빈 슬롯 → 레시피 선택 모달
+  if(!stove.assignedRecipeId) {
+    openRecipePicker(slotId);
+    return;
+  }
+
+  const recipeId = stove.assignedRecipeId;
+
+  // 조리 중 → 대기열에 추가
+  if(stove.cooking) {
+    const maxQueue = 10;
+    if(stove.queue >= maxQueue) {
+      showToast(`대기열이 가득 찼어요! (${maxQueue}/${maxQueue})`);
+      return;
+    }
+    stove.queue++;
+    showToast(`대기열 추가! (${stove.queue}/${maxQueue})`);
+    renderStoveSlots();
+    return;
+  }
+
+  // 가판대 10개 체크
+  if(!canAddToStand(recipeId)) {
+    showToast('가판대가 가득 찼어요! (10/10)');
+    return;
+  }
+
+  // 조리 시작
+  const recipe = ALL_RECIPES.find(r=>r.id===recipeId);
+  startCooking(stove, recipe);
+  renderStoveSlots();
+}
+
+// ===========================
+// RECIPE PICKER (레시피 선택 모달)
+// ===========================
+let pendingPickerSlotId = null;
+
+function openRecipePicker(slotId) {
+  const stove = state.stoves[slotId];
+  // 조리 중에는 교체 불가
+  if(stove && stove.cooking) {
+    showToast('조리 중에는 변경할 수 없어요!');
+    return;
+  }
+
+  pendingPickerSlotId = slotId;
+  const grid = document.getElementById('recipe-picker-grid');
+  const ownedRecipes = getActiveRecipes();
+
+  let html = '';
+  if(!ownedRecipes.length) {
+    html = '<div style="text-align:center;color:#aaa;padding:20px;grid-column:1/-1;">보유한 레시피가 없어요!</div>';
+  } else {
+    ownedRecipes.forEach(recipe => {
+      const assignedElsewhere = state.stoves.some(s => s.id !== slotId && s.id < state.numStoves && s.assignedRecipeId === recipe.id);
+      const cookTime = (recipe.cookTime * getCookTimeMultiplier() / 1000).toFixed(0);
+      html += `<div class="rp-recipe ${assignedElsewhere ? 'assigned-elsewhere' : ''}" onclick="assignRecipeToSlot(${slotId}, '${recipe.id}')">
+        <div class="rp-icon">${recipe.icon}</div>
+        <div class="rp-name">${recipe.name}</div>
+        <div class="rp-time">${cookTime}s</div>
+        ${assignedElsewhere ? '<div class="rp-note">사용 중</div>' : ''}
+      </div>`;
+    });
+  }
+
+  grid.innerHTML = html;
+  document.getElementById('recipe-picker-modal').classList.add('show');
+}
+
+function closeRecipePicker() {
+  pendingPickerSlotId = null;
+  document.getElementById('recipe-picker-modal').classList.remove('show');
+}
+
+function assignRecipeToSlot(slotId, recipeId) {
+  const stove = state.stoves[slotId];
+  if(!stove) return;
+
+  // 조리 중 보호
+  if(stove.cooking) {
+    showToast('조리 중에는 변경할 수 없어요!');
+    return;
+  }
+
+  const oldRecipeId = stove.assignedRecipeId;
+
+  // 같은 요리면 닫기만
+  if(oldRecipeId === recipeId) {
+    closeRecipePicker();
+    return;
+  }
+
+  // 이전 요리 가판대 정리 (다른 슬롯에 같은 요리 없을 때만)
+  if(oldRecipeId) {
+    const otherHasSame = state.stoves.some(s => s.id !== slotId && s.id < state.numStoves && s.assignedRecipeId === oldRecipeId);
+    if(!otherHasSame) {
+      clearStandForRecipe(oldRecipeId);
+    }
+  }
+
+  // 새 요리 장착
+  stove.assignedRecipeId = recipeId;
+
+  closeRecipePicker();
+  renderStoveSlots();
+  renderStands();
+  const recipe = ALL_RECIPES.find(r=>r.id===recipeId);
+  showToast(`${recipe.name} 장착! 🍳`);
+}
+
+function clearStandForRecipe(recipeId) {
+  const stand = state.foodStands.find(s => s.recipeId === recipeId);
+  if(stand && stand.quantity > 0) {
+    showToast(`${stand.icon} ${stand.quantity}개가 가판대에서 제거되었어요`);
+    stand.quantity = 0;
+    stand.recipeId = null;
+    stand.icon = '';
+    renderStands();
+  }
+}
+
+// ===========================
+// FOOD STAND (가판대)
+// ===========================
+function initFoodStands() {
+  state.foodStands = [];
+  for(let i=0; i<5; i++) state.foodStands.push({id:i, recipeId:null, icon:'', quantity:0});
+}
+
+function canAddToStand(recipeId) {
+  // 이미 해당 요리가 가판대에 있으면 10개 미만일 때만 추가 가능
+  const existing = state.foodStands.find(s=>s.recipeId===recipeId);
+  if(existing) return existing.quantity < 10;
+  // 빈 가판대가 있으면 OK
+  const empty = state.foodStands.find(s=>!s.recipeId);
+  return !!empty;
+}
+
+function addToStand(recipeId) {
+  const recipe = ALL_RECIPES.find(r=>r.id===recipeId);
+  if(!recipe) return;
+  // 같은 요리는 반드시 하나의 가판대에만
+  let stand = state.foodStands.find(s=>s.recipeId===recipeId);
+  if(stand) {
+    if(stand.quantity >= 10) return;
+  } else {
+    stand = state.foodStands.find(s=>!s.recipeId);
+    if(!stand) return;
+    stand.recipeId = recipeId;
+    stand.icon = recipe.icon;
+    stand.quantity = 0;
+  }
+  stand.quantity++;
+  renderStands();
+}
+
+function takeFromStand(recipeId) {
+  let stand;
+  if(recipeId) {
+    stand = state.foodStands.find(s=>s.recipeId===recipeId && s.quantity>0);
+  }
+  if(!stand) {
+    stand = state.foodStands.find(s=>s.quantity>0);
+  }
+  if(!stand) return null;
+  stand.quantity--;
+  const taken = {recipeId:stand.recipeId, icon:stand.icon};
+  if(stand.quantity<=0) { stand.recipeId=null; stand.icon=''; }
+  renderStands();
+  return taken;
+}
+
+function renderStands() {
+  for(let i=0; i<5; i++) {
+    const el = document.getElementById('stand-'+i);
+    const s = state.foodStands[i];
+    el.classList.add('active'); // 항상 5칸 활성
+    if(s.recipeId && s.quantity>0) {
+      el.classList.remove('empty');
+      el.innerHTML = `<span class="stand-icon">${s.icon}</span><span class="stand-qty">${s.quantity}</span>`;
+    } else {
+      el.classList.add('empty');
+      el.innerHTML = '<span class="stand-icon">-</span>';
+    }
+  }
+}
+
+// ===========================
+// VILLAGER SYSTEM (마을 거리 — 복작복작)
+// ===========================
+let villagers = [];
+let villagerNextId = 0;
+const DOOR_X = 183; // 문 중앙 x좌표 (390/2 - 12)
+const DOOR_Y = 605; // 문 위치 y좌표 (game-area 기준)
+const STREET_WIDTH = 450; // villager-area 폭 (left:-30 ~ right:-30 → 390+60)
+
+// 랜덤 이모지 — 도감 미등장 주민용 (거리 분위기)
+const PASSERBY_EMOJIS = ['🐥','🐓','🐔','🐦','🐧','🐤','🦆','🦉','🐸','🐰','🐻','🦊','🐷','🐮','🐱','🐶','🐹','🦝','🦡','🐿️'];
+
+function spawnVillager() {
+  if(villagers.length >= VILLAGER_MAX) return;
+
+  // 50% 확률로 도감 캐릭터, 50%는 지나가는 행인
+  const useCustomer = Math.random() < 0.5;
+  let picked = null;
+
+  if(useCustomer) {
+    const eligible = getEligibleCustomers();
+    if(eligible.length) {
+      const isRare = Math.random()<0.05;
+      const pool = isRare ? eligible.filter(c=>c.rare) : eligible.filter(c=>!c.rare);
+      const finalPool = pool.length ? pool : eligible.filter(c=>!c.rare);
+      if(finalPool.length) picked = randomFrom(finalPool);
+    }
+  }
+
+  // 행인 또는 도감 캐릭터 설정
+  const isPasserby = !picked;
+  const emoji = picked ? picked.emoji : randomFrom(PASSERBY_EMOJIS);
+  const fromLeft = Math.random() < 0.5;
+  const startX = fromLeft ? -30 : STREET_WIDTH;
+  const speed = VILLAGER_SPEED_MIN + Math.random() * (VILLAGER_SPEED_MAX - VILLAGER_SPEED_MIN);
+  const dir = fromLeft ? 1 : -1;
+  // y축 약간 랜덤 (위아래 분포)
+  const bottomY = Math.floor(Math.random() * 30); // 0~30px
+  const sizeClass = Math.random() < 0.25 ? 'size-sm' : (Math.random() < 0.3 ? 'size-lg' : '');
+
+  // 도감 등록 (도감 캐릭터만)
+  if(picked && !state.discoveredCustomers.includes(picked.id)) {
+    state.discoveredCustomers.push(picked.id);
+    showToast(`📖 새로운 손님 발견: ${picked.name}!`);
+  }
+
+  const v = {
+    id: villagerNextId++,
+    customerId: picked ? picked.id : null,
+    emoji: emoji,
+    name: picked ? picked.name : '',
+    followers: picked ? picked.followers : 0,
+    rare: picked ? (picked.rare||false) : false,
+    preference: picked ? picked.preference : null,
+    isPasserby: isPasserby,
+    x: startX,
+    speed: speed,
+    dir: dir,
+    bottomY: bottomY,
+    entering: false,
+    el: null,
+  };
+
+  const el = document.createElement('div');
+  el.className = 'villager ' + (dir > 0 ? 'walk-right' : 'walk-left') + (sizeClass ? ' '+sizeClass : '');
+  el.textContent = emoji;
+  el.style.left = startX + 'px';
+  el.style.bottom = bottomY + 'px';
+  villagerArea.appendChild(el);
+  v.el = el;
+  villagers.push(v);
+}
+
+function updateVillagers() {
+  for(let i = villagers.length - 1; i >= 0; i--) {
+    const v = villagers[i];
+    if(v.entering) continue; // 입장 중인 주민은 건들지 않음
+
+    // 이동
+    v.x += v.dir * v.speed;
+    v.el.style.left = v.x + 'px';
+
+    // 화면 밖으로 완전히 나감 → 제거
+    if(v.x > STREET_WIDTH + 10 || v.x < -40) {
+      v.el.remove();
+      villagers.splice(i, 1);
+    }
+  }
+  tryVillagerEnter();
+}
+
+function tryVillagerEnter() {
+  const emptyTables = state.tables.filter(t=>t.id<state.numTables && !t.occupied);
+  if(!emptyTables.length) return;
+
+  for(const table of emptyTables) {
+    // 입장 가능한 주민: 행인이 아닌 + 화면 안에 있는 + 입장 중 아닌
+    const ready = villagers.filter(v => !v.isPasserby && !v.entering && v.x > 30 && v.x < STREET_WIDTH - 60);
+    if(!ready.length) break;
+    // 문에 가장 가까운 주민 선택
+    const doorCenterX = DOOR_X + 30; // villager-area는 left:-30이므로 보정
+    ready.sort((a,b) => Math.abs(a.x - doorCenterX) - Math.abs(b.x - doorCenterX));
+    const v = ready[0];
+    v.entering = true;
+    table.occupied = true; // 즉시 점유 표시하여 중복 착석 방지
+    villagerEnterDoor(v, table);
+  }
+}
+
+function villagerEnterDoor(villager, table) {
+  // 1단계: 주민이 문 쪽으로 걸어감 (CSS transition 사용)
+  const doorLocalX = DOOR_X + 30; // villager-area 좌표계에서 문 위치
+  villager.el.classList.add('entering-door');
+  villager.el.style.left = doorLocalX + 'px';
+  villager.el.style.bottom = '50px'; // 문 위쪽으로 올라가며 사라짐
+  villager.el.style.opacity = '0.3';
+
+  setTimeout(() => {
+    // 2단계: 주민 DOM 제거 → 걸어가는 캐릭터(walker)로 전환
+    villager.el.remove();
+    villagers = villagers.filter(v=>v.id!==villager.id);
+
+    const tablePos = TABLE_POSITIONS[table.id];
+    const tableAbsX = 10 + tablePos.left + 30;
+    const tableAbsY = 320 + tablePos.top - 25;
+
+    const walker = document.createElement('div');
+    walker.className = 'customer-walking';
+    walker.textContent = villager.emoji;
+    walker.style.left = DOOR_X + 'px';
+    walker.style.top = DOOR_Y + 'px';
+    gameContainer.querySelector('#game-area').appendChild(walker);
+
+    requestAnimationFrame(() => {
+      walker.style.left = tableAbsX + 'px';
+      walker.style.top = tableAbsY + 'px';
+    });
+
+    // 3단계: 도착 후 착석
+    setTimeout(() => {
+      walker.remove();
+      table.occupied = true;
+      table.customer = {
+        customerId:villager.customerId, emoji:villager.emoji,
+        name:villager.name, followers:villager.followers, rare:villager.rare
+      };
+      table.status = 'checking_food';
+      const el = document.getElementById('table-'+table.id);
+      el.querySelector('.seated-customer').textContent = villager.emoji;
+      el.querySelector('.seated-customer').classList.add('show');
+      if(Math.random() < 0.30) {
+        const speech = getCustomerSpeech(villager.customerId, 'seated');
+        if(speech) setTimeout(()=>showCustomerBubble(table.id, speech), 400);
+      }
+      customerCheckFood(table, villager.preference);
+    }, 1400);
+  }, 1000);
+}
+
+// ===========================
+// CUSTOMER EXIT ANIMATION (퇴장 동선)
+// ===========================
+function animateCustomerExit(tableId, emoji) {
+  const tablePos = TABLE_POSITIONS[tableId];
+  const startX = 10 + tablePos.left + 30;
+  const startY = 320 + tablePos.top - 25;
+
+  const walker = document.createElement('div');
+  walker.className = 'customer-walking';
+  walker.textContent = emoji;
+  walker.style.left = startX + 'px';
+  walker.style.top = startY + 'px';
+  gameContainer.querySelector('#game-area').appendChild(walker);
+
+  // 문으로 이동
+  requestAnimationFrame(() => {
+    walker.style.left = DOOR_X + 'px';
+    walker.style.top = DOOR_Y + 'px';
+  });
+
+  // 문 도착 후 사라짐
+  setTimeout(() => {
+    walker.style.opacity = '0';
+    setTimeout(() => walker.remove(), 300);
+  }, 1300);
+}
+
+// ===========================
+// CUSTOMER FOOD CHECK (손님 음식 확인)
+// ===========================
+function customerCheckFood(table, preference) {
+  let taken = null;
+  if(preference) {
+    if(preference.recipeId) {
+      taken = takeFromStand(preference.recipeId);
+    } else if(preference.category) {
+      const catStand = state.foodStands.find(s=>s.quantity>0 && ALL_RECIPES.find(r=>r.id===s.recipeId)?.category===preference.category);
+      if(catStand) taken = takeFromStand(catStand.recipeId);
+    }
+  }
+  if(!taken) taken = takeFromStand(null);
+
+  if(taken) {
+    const recipe = ALL_RECIPES.find(r=>r.id===taken.recipeId);
+    table.recipe = recipe;
+    table.status = 'eating';
+    serveFood(table.id, recipe);
+  } else {
+    table.status = 'waiting_food';
+    showCustomerBubble(table.id, '음식 없나...?', 3000);
+    table._foodWaitTimer = setTimeout(()=>{
+      let retryTaken = null;
+      if(preference) {
+        if(preference.recipeId) retryTaken = takeFromStand(preference.recipeId);
+        else if(preference.category) {
+          const cs = state.foodStands.find(s=>s.quantity>0 && ALL_RECIPES.find(r=>r.id===s.recipeId)?.category===preference.category);
+          if(cs) retryTaken = takeFromStand(cs.recipeId);
+        }
+      }
+      if(!retryTaken) retryTaken = takeFromStand(null);
+
+      if(retryTaken) {
+        const recipe = ALL_RECIPES.find(r=>r.id===retryTaken.recipeId);
+        table.recipe = recipe;
+        table.status = 'eating';
+        serveFood(table.id, recipe);
+      } else {
+        customerLeaveHungry(table);
+      }
+    }, CUSTOMER_FOOD_WAIT);
+  }
+}
+
+function customerLeaveHungry(table) {
+  const customer = table.customer;
+  const name = customer ? customer.name : '손님';
+  table.status = 'empty';
+  table.occupied = false;
+  const el = document.getElementById('table-'+table.id);
+  el.querySelector('.seated-customer').classList.remove('show');
+  showToast(`😢 ${name}님이 음식 없이 떠났어요...`);
+  // 퇴장 애니메이션
+  if(customer) animateCustomerExit(table.id, customer.emoji);
+  table.customer = null;
+  table.recipe = null;
+}
+
+// ===========================
 // GAME LOOP
 // ===========================
-function gameLoop() { updateCooking(); requestAnimationFrame(gameLoop); }
+function updateEating() {
+  const now = Date.now();
+  state.tables.forEach(table => {
+    if(table.status !== 'eating' || !table.eatStartTime) return;
+    const elapsed = now - table.eatStartTime;
+    const remaining = Math.max(0, 1 - elapsed / table.eatDuration);
+    const el = document.getElementById('table-' + table.id);
+    if(el) {
+      el.querySelector('.eat-progress-fill').style.width = (remaining * 100) + '%';
+    }
+  });
+}
+
+function gameLoop() {
+  updateCooking();
+  updateEating();
+  updateVillagers();
+  requestAnimationFrame(gameLoop);
+}
+
+// ===========================
+// INIT
+// ===========================
+initFoodStands();
+renderStands();
+renderStoveSlots();
 updateHUD();
 showChefBubble('어서오세요거덩요!');
 gameLoop();
 initExistingStaff();
-setTimeout(()=>showToast('홍보 버튼을 눌러 손님을 불러보세요!'),1000);
+// 주민 자동 스폰
+setInterval(spawnVillager, VILLAGER_SPAWN_INTERVAL);
+setTimeout(()=>showToast('하단 슬롯에 요리를 장착해보세요!'),1000);

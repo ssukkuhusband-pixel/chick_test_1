@@ -14,12 +14,13 @@ const state = {
   // 확장 상태
   numTables: 1,
   numStoves: 1,
+  numStands: 5,
   expansionsDone: [],
+  foodStands: [],    // [{id, recipeId, icon, quantity}] — 런타임 init
 
   // 화구/식탁 상태 (동적으로 생성)
   stoves: [],
   tables: [],
-  stoveQueue: [],
   waitingQueue: [],
 
   // 보유 레시피 { recipeId, level, duplicates }
